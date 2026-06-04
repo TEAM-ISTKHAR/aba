@@ -392,7 +392,7 @@ class Call(PyTgCalls):
                 await set_loop(chat_id, loop)
             await auto_clean(popped)
             
-            # ⬇️ --- AUTOPLAY LOGIC INJECTED HERE --- ⬇️
+            # ⬇️ --- NEW TRULY RANDOM SAME-LANGUAGE AUTOPLAY LOGIC --- ⬇️
             if not check:
                 from PritiMusic.utils.database.autoplay import is_autoplay_group
                 
@@ -400,29 +400,69 @@ class Call(PyTgCalls):
                 if auto_on and popped:
                     try:
                         from youtubesearchpython.__future__ import VideosSearch
-                        import random
                         
-                        # ✅ FIX 1: Safely Extract Title and truncate to avoid hyper-specific loop
                         raw_title = popped.get("title")
-                        if not raw_title or str(raw_title) == "None":
-                            last_title = "Hindi music hits"
-                        else:
-                            last_title = str(raw_title)[:25] # Title lamba hone se wahi gaana repeat hota hai
+                        last_vidid = str(popped.get("vidid", ""))
+                        title_lower = str(raw_title).lower() if raw_title else ""
+
+                        # 1. Language Smart Pools for Query Variety
+                        lang_pools = {
+                            "Hindi": [
+                                "latest hindi hit songs", "bollywood romantic audio hits", 
+                                "hindi sad songs official audio", "trending bollywood tracks", 
+                                "90s hindi evergreen superhits", "new hindi lofi songs"
+                            ],
+                            "Punjabi": [
+                                "latest punjabi hit tracks", "punjabi pop party songs", 
+                                "trending punjabi single", "punjabi bhangra beats audio"
+                            ],
+                            "Bhojpuri": [
+                                "latest bhojpuri non stop hits", "bhojpuri mp3 audio songs", 
+                                "trending bhojpuri dj remix", "new bhojpuri audio tracks"
+                            ],
+                            "Haryanvi": [
+                                "latest haryanvi songs hits", "haryanvi dance mix audio", "trending haryanvi music"
+                            ],
+                            "Tamil": [
+                                "latest tamil kollywood hits", "tamil romantic melodies audio", "trending tamil movie songs"
+                            ],
+                            "Telugu": [
+                                "latest telugu tollywood hits", "telugu non stop melody songs", "trending telugu tracks"
+                            ],
+                            "English": [
+                                "global top english hits", "billboard hot 100 english pop", "trending english tracks audio"
+                            ]
+                        }
+
+                        # 2. Keyword Map to Detect Language from Title
+                        keywords_map = {
+                            "Punjabi": ["punjabi", "jass", "sidhu", "karan", "diljit", "amrit", "ap dhillon", "gurinder"],
+                            "Bhojpuri": ["bhojpuri", "khesari", "pawan", "shilpi", "antra", "bhojpuriya"],
+                            "Haryanvi": ["haryanvi", "sapna", "renuka", "gulzaar", "md desi"],
+                            "Tamil": ["tamil", "anirudh", "rahman", "kollywood", "ilayaraja"],
+                            "Telugu": ["telugu", "allu", "ramarao", "tollywood", "dsp ", "thaman"],
+                            "English": ["english", "pop song", "taylor swift", "justin bieber", "remix english", "hiphop english"]
+                        }
+
+                        detected_lang = "Hindi"  # Default fallback
+                        for lang, kws in keywords_map.items():
+                            if any(kw in title_lower for kw in kws):
+                                detected_lang = lang
+                                break
+
+                        # 3. Choose a COMPLETELY RANDOM playlist query from the detected language pool
+                        search_query = random.choice(lang_pools[detected_lang])
                         
-                        # ✅ FIX 2: Randomizer added to always fetch fresh songs & force audio
-                        keywords = ["official audio", "lyrical video", "new hits", "audio song", "music"]
-                        search_query = f"{last_title} {random.choice(keywords)}"
-                        
-                        search = VideosSearch(search_query, limit=15)
+                        # Fetch 30 items to maximize variety and avoid repetitions
+                        search = VideosSearch(search_query, limit=30)
                         result = await search.next()
                         
                         if result and "result" in result and len(result["result"]) > 0:
-                            last_vidid = str(popped.get("vidid", ""))
-                            
-                            # Remove the previous song from choices to avoid instant repeat
+                            # Filter out the exact previous video ID
                             choices = [res for res in result["result"] if str(res.get("id")) != last_vidid]
                             
                             if choices:
+                                # Pick a completely random track from the list
                                 next_track = random.choice(choices)
                                 next_vidid = str(next_track.get("id"))
                                 next_title = str(next_track.get("title", "Unknown Title"))
@@ -434,8 +474,8 @@ class Call(PyTgCalls):
                                     "by": "Autoplay 🟢",
                                     "chat_id": chat_id,
                                     "file": f"vid_{next_vidid}",
-                                    "streamtype": "audio", # ✅ FIX 3: Force Audio Stream Strictly
-                                    "user_id": 0,          # ✅ FIX 4: Set to 0. THIS WAS CAUSING THE NONETYPE ERROR!
+                                    "streamtype": "audio", 
+                                    "user_id": 0,          
                                     "seconds": 0, 
                                     "dur": next_dur,
                                     "old_dur": next_dur,
@@ -444,7 +484,6 @@ class Call(PyTgCalls):
                                 })
                                 
                                 try:
-                                    # Optional: Send Autoplay Log if available
                                     from PritiMusic.utils.logger import autoplay_log
                                     await autoplay_log(app, chat_id, next_title)
                                 except Exception:
@@ -457,7 +496,7 @@ class Call(PyTgCalls):
                 if chat_id in self.active_clients:
                     del self.active_clients[chat_id]
                 return await client.leave_group_call(chat_id)
-            # ⬆️ --- AUTOPLAY LOGIC END --- ⬆️
+            # ⬆专 --- AUTOPLAY LOGIC END --- ⬆专
             
         except:
             try:
