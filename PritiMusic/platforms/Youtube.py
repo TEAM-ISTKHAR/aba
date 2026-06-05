@@ -218,7 +218,19 @@ class YouTubeAPI:
             link = self.base + link
         if "&" in link:
             link = link.split("&")[0]
-        ytdl_opts = {"quiet": True}
+            
+        # 🚀 Yahan aria2c ki settings add kari gayi hain
+        ytdl_opts = {
+            "quiet": True,
+            "external_downloader": "aria2c",
+            "external_downloader_args": [
+                "-x", "16",           # 16 parallel connections
+                "-s", "16",           # 16 segments
+                "-k", "1M",           # 1MB minimum segment size
+                "--allow-piece-length-change=true"
+            ]
+        }
+        
         ydl = yt_dlp.YoutubeDL(ytdl_opts)
         
         formats_available = []
