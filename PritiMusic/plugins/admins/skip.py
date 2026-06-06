@@ -7,9 +7,8 @@ from PritiMusic import YouTube, app
 from PritiMusic.core.call import Lucky
 from PritiMusic.misc import db
 
-# ✅ FIX 1: get_assistant ko import kiya taaki sahi client fetch ho sake
+# ✅ Sirf jo zaroori hai wahi import kiya hai
 from PritiMusic.utils.database import get_loop, get_assistant 
-from PritiMusic.utils.database.autoplay import is_autoplay_group # 🟢 FIX: Imported Autoplay Check
 from PritiMusic.utils.decorators import AdminRightsCheck
 from PritiMusic.utils.inline import close_markup, stream_markup, stream_markup2
 from PritiMusic.utils.stream.autoclear import auto_clean
@@ -25,7 +24,7 @@ def get_random_img(img_list):
     return "https://telegra.ph/file/2e3d368e77c449c287430.jpg" # Fallback
 
 @app.on_message(
-    filters.command(["skip", "cskip", "next", "cnext"]) & filters.group & ~BANNED_USERS
+    filters.command(["skip", "cskip", "next", "cnext"], prefixes=["/", "!"]) & filters.group & ~BANNED_USERS
 )
 @AdminRightsCheck
 async def skip(cli, message: Message, _, chat_id):
@@ -50,29 +49,6 @@ async def skip(cli, message: Message, _, chat_id):
                                 return await message.reply_text(_["admin_12"])
                             if popped:
                                 await auto_clean(popped)
-                        if not check:
-                            # 🟢 FIX: Handoff to Autoplay for /skip <number>
-                            auto_on = await is_autoplay_group(chat_id)
-                            if auto_on:
-                                if not hasattr(Lucky, "last_played_song"):
-                                    Lucky.last_played_song = {}
-                                Lucky.last_played_song[chat_id] = popped
-                                # ✅ FIX 2: Sahi assistant client pass kiya
-                                assistant = await get_assistant(chat_id)
-                                return await Lucky.change_stream(assistant, chat_id)
-                            else:
-                                try:
-                                    await message.reply_text(
-                                        text=_["admin_6"].format(
-                                            message.from_user.mention,
-                                            message.chat.title,
-                                        ),
-                                        reply_markup=close_markup(_),
-                                    )
-                                    await Lucky.stop_stream(chat_id)
-                                except:
-                                    return
-                                return 
                     else:
                         return await message.reply_text(_["admin_11"].format(count))
                 else:
@@ -83,32 +59,24 @@ async def skip(cli, message: Message, _, chat_id):
             return await message.reply_text(_["admin_9"])
     else:
         check = db.get(chat_id)
-        popped = None
+        if not check:
+            return await message.reply_text(_["queue_2"])
+        
         try:
-            popped = check.pop(0)
-            if popped:
-                await auto_clean(popped)
-            if not check:
-                # 🟢 FIX: Handoff to Autoplay for normal /skip
-                auto_on = await is_autoplay_group(chat_id)
-                if auto_on:
-                    if not hasattr(Lucky, "last_played_song"):
-                        Lucky.last_played_song = {}
-                    Lucky.last_played_song[chat_id] = popped
-                    # ✅ FIX 3: Sahi assistant client pass kiya
+            # 🟢 THE REAL FIX (DOUBLE POP BYPASS) 🟢
+            # Agar queue me sirf 1 track hai (jo currently chal raha hai), 
+            # toh usko yaha pop mat karo. Seedha change_stream ko handle karne do.
+            # Wo bina crash hue Autoplay ko trigger kar dega!
+            if len(check) == 1:
+                try:
                     assistant = await get_assistant(chat_id)
-                    return await Lucky.change_stream(assistant, chat_id)
-                else:
-                    await message.reply_text(
-                        text=_["admin_6"].format(
-                            message.from_user.mention, message.chat.title
-                        ),
-                        reply_markup=close_markup(_),
-                    )
-                    try:
-                        return await Lucky.stop_stream(chat_id)
-                    except:
-                        return
+                except:
+                    assistant = Lucky.one
+                return await Lucky.change_stream(assistant, chat_id)
+            else:
+                popped = check.pop(0)
+                if popped:
+                    await auto_clean(popped)
         except Exception:
             try:
                 await message.reply_text(
@@ -120,7 +88,8 @@ async def skip(cli, message: Message, _, chat_id):
                 return await Lucky.stop_stream(chat_id)
             except:
                 return
-    
+
+    # Jab upar wali conditions pass ho jayengi, toh ye agla gaana chalayega
     queued = check[0]["file"]
     title = (check[0]["title"]).title()
     user = check[0]["by"]
