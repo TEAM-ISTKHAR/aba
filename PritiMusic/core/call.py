@@ -1,6 +1,7 @@
 import asyncio
 import os
 import random
+import logging
 from datetime import datetime, timedelta
 from typing import Union
 
@@ -39,6 +40,25 @@ from PritiMusic.utils.inline.play import stream_markup, telegram_markup
 from PritiMusic.utils.stream.autoclear import auto_clean
 from strings import get_string
 from PritiMusic.utils.thumbnails import get_thumb
+
+# ==========================================
+# 🛑 GLOBAL ERROR BYPASS FOR CLONES
+# ==========================================
+def handle_asyncio_exceptions(loop, context):
+    msg = context.get("exception", context.get("message"))
+    msg_str = str(msg)
+    # Ignore stale voice chat errors to keep clones running
+    if "GROUPCALL_FORBIDDEN" in msg_str or "SetVideoCallStatus" in msg_str or "GROUPCALL_INVALID" in msg_str:
+        pass 
+    else:
+        logging.getLogger("asyncio").error(f"Unhandled Asyncio Error: {msg}")
+
+try:
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(handle_asyncio_exceptions)
+except Exception:
+    pass
+# ==========================================
 
 autoend = {}
 counter = {}
@@ -339,9 +359,7 @@ class Call(PyTgCalls):
                     title_lower = str(raw_title).lower()
                     last_vidid = str(popped.get("vidid") or "")
 
-                    # ==========================================
-                    # Phase 1: Smart Language Autoplay (With Float-Safe yt-dlp Fallback)
-                    # ==========================================
+                    # Phase 1: Smart Language Autoplay
                     try:
                         lang_pools = {
                             "Hindi": ["hindi single track official video", "bollywood latest lyrical song"],
@@ -404,7 +422,7 @@ class Call(PyTgCalls):
                                     vidid = entry.get("id")
                                     if not vidid or vidid == last_vidid: continue
                                     
-                                    # 🚀 FLOAT TYPE FIX HERE
+                                    # FLOAT TYPE FIX
                                     raw_dur = entry.get("duration", 0)
                                     try:
                                         dur_sec = int(float(raw_dur)) if raw_dur else 0
@@ -447,9 +465,7 @@ class Call(PyTgCalls):
                     except Exception as e:
                         LOGGER(__name__).warning(f"Smart Autoplay Error: {e}")
 
-                    # ==========================================
                     # Phase 2: Native YouTube API Fallback 
-                    # ==========================================
                     if not success:
                         try:
                             recommendation = await YouTube.autoplay(
