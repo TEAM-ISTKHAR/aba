@@ -1,6 +1,6 @@
 import random
 from typing import Union
-from pyrogram import filters, types
+from pyrogram import filters, types, enums
 from pyrogram.types import InlineKeyboardMarkup, Message, InlineKeyboardButton
 from PritiMusic import app
 from PritiMusic.utils import help_pannel
@@ -61,7 +61,8 @@ async def helper_private(
 @LanguageStart
 async def help_com_group(client, message: Message, _):
     keyboard = private_help_panel(_)
-    await message.reply_text(_["help_2"], reply_markup=InlineKeyboardMarkup(keyboard))
+    # ✅ FIX: Removed the redundant InlineKeyboardMarkup() wrapper
+    await message.reply_text(_["help_2"], reply_markup=keyboard)
 
 
 @app.on_callback_query(filters.regex("help_callback") & ~BANNED_USERS)
@@ -124,6 +125,6 @@ async def mb_plugin_button(client, CallbackQuery):
     cb = callback_data.split(None, 1)[1]
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("ʙᴀᴄᴋ", callback_data=f"mbot_cb")]])
     if cb == "Okieeeeee":
-        await CallbackQuery.edit_message_text(f"`something errors`",reply_markup=keyboard,parse_mode=enums.ParseMode.MARKDOWN)
+        await CallbackQuery.edit_message_text(f"`something errors`", reply_markup=keyboard, parse_mode=enums.ParseMode.MARKDOWN)
     else:
         await CallbackQuery.edit_message_text(getattr(Helper, cb), reply_markup=keyboard)
