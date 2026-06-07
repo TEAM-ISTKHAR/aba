@@ -1,7 +1,7 @@
 import asyncio
 from pyrogram import filters, Client
 from pyrogram.enums import ChatType
-from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid, UserIsBlocked, InputUserDeactivated, AuthKeyUnregistered
+from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid, UserIsBlocked, UserDeactivated, AuthKeyUnregistered
 
 from PritiMusic import app
 from PritiMusic.misc import SUDOERS
@@ -31,7 +31,7 @@ async def clone_broadcast_handler(client, message):
     global IS_CBROADCASTING
     
     if IS_CBROADCASTING:
-        return await message.reply_text("⚠️ **Broadcast already running!** Stop it first.")
+        return await message.reply_text("⚠️ **Broadcast already running!** Stop it first baby.")
 
     # --- COMMAND PARSING ---
     if message.reply_to_message:
@@ -62,7 +62,7 @@ async def clone_broadcast_handler(client, message):
         return await message.reply_text("❌ **Message is empty!**")
 
     IS_CBROADCASTING = True
-    status_msg = await message.reply_text("🔄 **Analyzing Clones...**")
+    status_msg = await message.reply_text("🔄 **Analyzing Clones Baby...**")
 
     # --- FETCH CLONES ---
     all_clones_data = []
@@ -83,6 +83,10 @@ async def clone_broadcast_handler(client, message):
     success_clones = 0
     failed_clones = 0
     total_sent = 0
+    
+    # --- NEW: Total Groups & Users Count Tracking ---
+    total_targetted_groups = 0
+    total_targetted_users = 0
 
     # --- MAIN LOOP ---
     for clone in all_clones_data:
@@ -105,6 +109,7 @@ async def clone_broadcast_handler(client, message):
                 owner = await get_clonebot_owner(bot_id)
                 if owner:
                     target_ids.add(int(owner))
+                    total_targetted_users += 1 # Owner counts as a user
             except:
                 pass
 
@@ -112,6 +117,8 @@ async def clone_broadcast_handler(client, message):
         if send_users:
             try:
                 users_list = await get_served_users_clone(bot_id)
+                count_u = len(users_list)
+                total_targetted_users += count_u
                 for u in users_list:
                     target_ids.add(int(u['user_id']))
             except:
@@ -121,12 +128,14 @@ async def clone_broadcast_handler(client, message):
         if send_groups:
             try:
                 chats_list = await get_served_chats_clone(bot_id)
+                count_g = len(chats_list)
+                total_targetted_groups += count_g
                 for c in chats_list:
                     target_ids.add(int(c['chat_id']))
             except:
                 pass
 
-        # Skip if empty (Count as processed but not active)
+        # Skip if empty
         if not target_ids:
             continue
 
@@ -171,6 +180,8 @@ async def clone_broadcast_handler(client, message):
                     
                     except FloodWait as e:
                         await asyncio.sleep(int(e.value))
+                    except (RPCError, PeerIdInvalid, UserIsBlocked):
+                        continue
                     except Exception:
                         continue
                 
@@ -183,10 +194,14 @@ async def clone_broadcast_handler(client, message):
 
     # --- FINAL REPORT ---
     IS_CBROADCASTING = False
+    
+    # Adding Total Groups and Users to the final text
     await status_msg.edit_text(
         f"✅ **Broadcast Completed!**\n\n"
         f"🤖 **Total Clones:** {total_clones}\n"
         f"📢 **Active Sending:** {success_clones}\n"
         f"⚠️ **Failed/Revoked:** {failed_clones}\n"
-        f"📨 **Messages Sent:** {total_sent}"
+        f"📨 **Messages Sent:** {total_sent}\n\n"
+        f"👥 **Total Users:** {total_targetted_users}\n"
+        f"👥 **Total Groups:** {total_targetted_groups}"
     )
