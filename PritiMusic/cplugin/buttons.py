@@ -13,7 +13,7 @@ from button import styled_button, ButtonStyle
 def clone_button():
     return styled_button(
         text="✦ 𝐂ʟᴏηє 𝐌є ✦", 
-        url="https://t.me/clone_MUSICrobot",
+        url="https://t.me/SizzuMusicBot",
         style=ButtonStyle.SUCCESS
     )
 
@@ -49,10 +49,10 @@ def stream_markup_timer(_, chat_id, played, dur):
     buttons = [
         [styled_button(text=get_bar(played, dur), callback_data="GetTimer", style=ButtonStyle.PRIMARY)],
         [
-            styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
-            styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
-            styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
-        ],
+    styled_button(text="⚡ 𝐔ᴘᴅᴀᴛᴇ𝐬", url="https://t.me/KavyaBots"),
+    styled_button(text="👑 𝐎ᴡɴᴇʀ", url="https://t.me/ll_Alexx_lll"),
+],
+
         [styled_button(text="❖ 𝐀ᴜᴛᴏ𝐏ʟᴀʏ ❖", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)],
         [clone_button()],
         [styled_button(text=_["CLOSE_BUTTON"], callback_data="close", style=ButtonStyle.DANGER)]
