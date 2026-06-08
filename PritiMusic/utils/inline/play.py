@@ -15,7 +15,7 @@ from button import styled_button, ButtonStyle
 def clone_button():
     return styled_button(
         text="『 ✦ 𝐂ʟᴏηє 𝐌є ✦ 』", 
-        url="https://t.me/clone_MUSICrobot",
+        url="https://t.me/SizzuMusicBot",
         style=ButtonStyle.SUCCESS
     )
 
@@ -23,7 +23,7 @@ def clone_button():
 def add_me_button():
     return styled_button(
         text="『 ♡ 𝐀ᴅᴅ 𝐌є 𝐁ᴀʙʏ ♡ 』",
-        url="https://t.me/clone_MUSICrobot?startgroup=true",
+        url="https://t.me/SizzuMusicBot?startgroup=true",
         style=ButtonStyle.SUCCESS
     )
 
@@ -72,11 +72,19 @@ def stream_markup_timer(_, chat_id, played, dur):
                 callback_data="GetTimer",
             )
         ],
+
         [
-            styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
-            styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
-            styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
-        ],
+    styled_button(
+        text="⚡ 𝐔ᴘᴅᴀᴛᴇ𝐬",
+        url="https://t.me/KavyaBots",
+        style=ButtonStyle.PRIMARY,
+    ),
+    styled_button(
+        text="👑 𝐎ᴡɴᴇʀ",
+        url="https://t.me/ll_Alexx_lll",
+        style=ButtonStyle.SUCCESS,
+    ),
+        ]
         [
             styled_button(text="❖ 𝐀ᴜᴛᴏ𝐏ʟᴀʏ ❖", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
         ],
